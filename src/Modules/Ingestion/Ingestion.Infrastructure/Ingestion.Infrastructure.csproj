@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ingestion.Application\Ingestion.Application.csproj" />
+    <ProjectReference Include="..\Ingestion.Domain\Ingestion.Domain.csproj" />
+    <ProjectReference Include="..\Ingestion.Contracts\Ingestion.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -88,8 +88,21 @@ secrets.json
 *.mdf
 *.ldf
 
-# Node (if front-end tooling is added)
+# Test and coverage output
+*.trx
+coverage*.xml
+coverage*.json
+coverage*.info
+lcov.info
+coveragereport/
+vulnerable.txt
+
+# Node and Angular (frontend/)
 node_modules/
+.angular/
+frontend/dist/
+playwright-report/
+test-results/
 
 # Publish output
 publish/

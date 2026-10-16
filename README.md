@@ -7,7 +7,7 @@ keeps a versioned archive of it, and offers search, rankings, watchlist alerts a
 Built as a .NET and Angular portfolio project: domain-driven design, test-driven development, CI/CD to the
 Oracle Cloud Always Free tier at zero cost.
 
-Status: **design phase**. Documentation is written first; implementation follows in test-first increments.
+Status: **increment 1 of the [roadmap](docs/roadmap.md) done** (backend skeleton and CI). Documentation is written first; implementation follows in test-first increments.
 
 ## Table of contents
 
@@ -30,8 +30,13 @@ domain model, architecture, testing strategy, CI/CD, roadmap and architecture de
 
 ## Getting started
 
-Not available yet; the repository currently contains the design documents and the unmodified ASP.NET Core template
-(`WebApplication1/`), which increment 1 of the [roadmap](docs/roadmap.md) replaces.
+Requires the .NET 10 SDK. The backend skeleton is in place (frontend and deployment come in increments 2 and 3):
+
+```bash
+dotnet build -warnaserror
+dotnet test
+dotnet run --project src/Host/Api   # then GET /health
+```
 
 ## Data attribution
 
