@@ -25,6 +25,8 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - First deployment live on Oracle Always Free (`VM.Standard.E2.1.Micro`, A1 capacity unavailable in `ca-montreal-1`), HTTPS via Caddy and DuckDNS.
 - Deployment: API and web (Caddy) Dockerfiles, `infra/compose.yml`, `infra/cloud-init.yml`, restricted `infra/deploy.sh` with tests, `cd.yml` (multi-arch images to GHCR, SSH deploy, smoke test, rollback), Oracle runbook and ADR-0011.
 
+- Rollback drill passed (2026-10-16): a deployment with `/health` answering 502 failed its smoke test, the `Roll back` step restored the previous images, `/health` returned 200 and the job ended red.
+
 ### Fixed
 
 - Page title is now MontrealFoodViolations (was the Angular scaffold default).

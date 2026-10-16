@@ -150,10 +150,10 @@ Instead, break `/health` where the unit tests cannot see it, so CI stays green a
 
 1. On `dev`, in `infra/Caddyfile`, change `handle /health { reverse_proxy api:8080 }` to proxy to `api:9999` (nothing listens there, so `/health` answers 502). Commit, push, merge to `master`.
 2. Watch **Actions → cd**: `publish` and `Deploy` succeed, `Smoke test` fails after its 60 s of retries, `Roll back` runs and the job ends red with the error "rolled back to the previous version".
-3. Check `curl -i https://<site>/health` is **200** again and `/opt/app/.env` on the VM holds the previous image tag (`.env.previous` holds the broken one).
+3. Check `curl -i https://<site>/health` is **200** again and `/opt/app/.env` on the VM holds the previous image tag. After a rollback `.env.previous` still holds that last good tag (a rollback does not overwrite it), so a second rollback is a no-op.
 4. Revert the commit and merge; the next deployment is green.
 
-The result of the drill is recorded in the [CHANGELOG](../CHANGELOG.md).
+The result of the drill is recorded in the [CHANGELOG](../CHANGELOG.md). The `Roll back` step ends with `exit 1` on purpose: a rolled-back deployment is still a failed deployment.
 
 ## Troubleshooting
 
