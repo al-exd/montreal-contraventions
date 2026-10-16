@@ -89,6 +89,16 @@ ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub   # note the fingerprint
 
 If `cloud-init status` reports an error, read `/var/log/cloud-init-output.log`.
 
+`/opt/app/deploy.sh` is downloaded from the public `master` branch at boot. If the repository is private, or the download failed for any reason, the file is missing: install it from your machine (repository root), which works in every case:
+
+```bash
+scp -i ~/.ssh/mfv_admin infra/deploy.sh ubuntu@<public-ip>:/tmp/deploy.sh
+ssh -i ~/.ssh/mfv_admin ubuntu@<public-ip> \
+  'sudo install -d -o deploy -g deploy /opt/app && sudo install -o deploy -g deploy -m 755 /tmp/deploy.sh /opt/app/deploy.sh'
+```
+
+Then check that the restricted key reaches the script and nothing else: `ssh -i ~/.ssh/mfv_deploy deploy@<public-ip> rollback` must print `no .env.previous: nothing to roll back to`.
+
 ## 6. DNS name
 
 Caddy needs a hostname to get a Let's Encrypt certificate. A free subdomain is enough; no token is needed because the certificate uses the HTTP challenge on port 80.
@@ -132,7 +142,18 @@ curl -i https://<site>/health          # 200, valid certificate
 
 Open `https://<site>/` in a browser: the shell with the dataset attribution is shown.
 
-Test the rollback once (increment 3 acceptance): make a second deployment that fails its smoke test, for example by temporarily setting the repository variable `SITE_ADDRESS` to a wrong-but-resolving name, or by pushing a commit whose `/health` returns 500. The `Roll back` step must re-apply the previous version and the job must end red with the message "rolled back". Then restore the variable or revert the commit and confirm `/health` is 200 again. On the VM, `/opt/app/.env.previous` holds the previous tag.
+### Rollback drill (increment 3 acceptance)
+
+Prove once that a failed smoke test restores the previous version. Do not point the repository variable `SITE_ADDRESS` at a wrong name: the rollback's own smoke test reads the same variable and would fail even after a successful rollback.
+
+Instead, break `/health` where the unit tests cannot see it, so CI stays green and CD runs:
+
+1. On `dev`, in `infra/Caddyfile`, change `handle /health { reverse_proxy api:8080 }` to proxy to `api:9999` (nothing listens there, so `/health` answers 502). Commit, push, merge to `master`.
+2. Watch **Actions → cd**: `publish` and `Deploy` succeed, `Smoke test` fails after its 60 s of retries, `Roll back` runs and the job ends red with the error "rolled back to the previous version".
+3. Check `curl -i https://<site>/health` is **200** again and `/opt/app/.env` on the VM holds the previous image tag (`.env.previous` holds the broken one).
+4. Revert the commit and merge; the next deployment is green.
+
+The result of the drill is recorded in the [CHANGELOG](../CHANGELOG.md).
 
 ## Troubleshooting
 
@@ -144,4 +165,5 @@ Test the rollback once (increment 3 acceptance): make a second deployment that f
 | Browser or curl times out on 80/443 | missing ingress rule (step 3.5) or iptables not saved (`sudo iptables -S INPUT` should list ports 80 and 443) |
 | Certificate error | DNS name does not yet point at the VM IP, or Let's Encrypt rate limit (`docker compose logs web` on the VM) |
 | Smoke test fails right after deploy | certificate issuance takes up to a minute; the test retries for 60 s, re-run the job |
-| Updating `deploy.sh` | the VM keeps its copy: `sudo -u deploy curl -fsSL https://raw.githubusercontent.com/al-exd/montreal-contraventions/master/infra/deploy.sh -o /opt/app/deploy.sh` |
+| `/opt/app/deploy.sh` missing | private repository (raw download returns 404): install it with `scp` as in step 5 |
+| Updating `deploy.sh` | the VM keeps its copy (public repository only; otherwise `scp` it again as in step 5): `sudo -u deploy curl -fsSL https://raw.githubusercontent.com/al-exd/montreal-contraventions/master/infra/deploy.sh -o /opt/app/deploy.sh` |
