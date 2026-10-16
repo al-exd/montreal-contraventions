@@ -15,6 +15,11 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - Architecture tests enforcing project-reference rules; `ci.yml` (format, build with warnings as errors, tests with coverage, vulnerable packages).
 - Removed the unmodified ASP.NET Core MVC template.
 
+### Added (increment 2)
+
+- Angular frontend skeleton with dev proxy to the API, app shell showing the dataset attribution, Vitest unit tests and a Playwright smoke test.
+- CI: frontend job (unit tests, build, e2e), Gitleaks secret scan, Dependabot for NuGet, npm and GitHub Actions; CI also runs on `dev`.
+
 ### Changed
 
 - Roadmap revised and renumbered: walking-skeleton deployment at increment 3, backups at increment 13 before the feature checkpoint, single Identity setup (ADRs 0009 and 0010).
