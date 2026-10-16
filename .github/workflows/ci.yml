@@ -21,6 +21,7 @@ jobs:
       - run: dotnet build --no-restore -warnaserror
       - run: dotnet test --no-build --collect:"XPlat Code Coverage"
       - name: Check for vulnerable packages
+        shell: bash
         run: |
           dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerable.txt
           ! grep -q "has the following vulnerable packages" vulnerable.txt
