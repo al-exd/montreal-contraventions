@@ -1,0 +1,104 @@
+name: cd
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [master]
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  publish:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-prefix: ${{ steps.prefix.outputs.value }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
+      - id: prefix
+        run: echo "value=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/montreal-contraventions" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: infra/api.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.prefix.outputs.value }}-api:${{ env.SHA }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: infra/web.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.prefix.outputs.value }}-web:${{ env.SHA }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Deploy
+        id: deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          SITE_ADDRESS: ${{ vars.SITE_ADDRESS }}
+          IMAGE_PREFIX: ${{ needs.publish.outputs.image-prefix }}
+        run: |
+          stage="$(mktemp -d)"
+          cp infra/compose.yml "$stage/compose.yml"
+          printf 'IMAGE_PREFIX=%s\nIMAGE_TAG=%s\nSITE_ADDRESS=%s\n' "$IMAGE_PREFIX" "$SHA" "$SITE_ADDRESS" > "$stage/env"
+          tar -C "$stage" -cf - compose.yml env | ssh "deploy@$DEPLOY_HOST" deploy
+      - name: Smoke test
+        env:
+          SITE_ADDRESS: ${{ vars.SITE_ADDRESS }}
+        run: curl -fsS --retry 10 --retry-delay 6 --retry-all-errors "https://$SITE_ADDRESS/health"
+      - name: Roll back
+        if: failure() && steps.deploy.conclusion != 'skipped'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          SITE_ADDRESS: ${{ vars.SITE_ADDRESS }}
+        run: |
+          ssh "deploy@$DEPLOY_HOST" rollback
+          curl -fsS --retry 10 --retry-delay 6 --retry-all-errors "https://$SITE_ADDRESS/health"
+          echo "::error::Deployment failed and was rolled back to the previous version"
+          exit 1

@@ -16,6 +16,7 @@ Design documentation, written before any production code (DDD first, then TDD in
 8. [CI/CD and deployment](07-cicd-and-deployment.md): pipelines, Oracle runbook, secrets, zero-cost guardrails
 9. [Roadmap](roadmap.md): TDD increments with acceptance criteria
 10. [Architecture decision records](adr/README.md)
+11. [Oracle runbook](08-oracle-runbook.md): console steps for the first deployment
 
 ## Conventions
 

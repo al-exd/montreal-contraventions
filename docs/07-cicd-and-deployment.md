@@ -49,11 +49,13 @@ Hard requirement: nothing is billed at the end of the month.
 
 ## Oracle setup runbook
 
+The step-by-step console procedure is in the [Oracle runbook](08-oracle-runbook.md). Summary:
+
 One-time, by hand in the OCI console (no Terraform or Ansible; see ADR-0003).
 
 1. Create an Always Free account; pick the home region once (cannot be changed), preferring one with A1 capacity.
 2. Create a budget of 1 USD with alert rules.
-3. Create a VCN with a public subnet; security list: ingress 80 and 443 from anywhere, 22 only from your IP.
+3. Create a VCN with a public subnet; security list: ingress 80 and 443 from anywhere, 22 from anywhere, key-only ([ADR-0011](adr/0011-ssh-open-to-internet-for-cd.md)).
 4. Launch an Ubuntu instance on `VM.Standard.A1.Flex` (2 OCPU, 12 GB, 50 GB boot) with `infra/cloud-init.yml` as user data. If out of capacity, retry periodically, else use `VM.Standard.E2.1.Micro` and `linux/amd64`.
 5. `cloud-init.yml` installs Docker and the compose plugin, enables unattended upgrades, creates the non-root `deploy` user and installs the restricted deploy key.
 6. Create a free DNS name (DuckDNS or nip.io) pointing at the VM public IP.

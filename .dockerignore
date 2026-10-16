@@ -1,0 +1,11 @@
+.git
+.github
+.claude
+docs
+**/bin
+**/obj
+**/node_modules
+**/.angular
+frontend/dist
+frontend/e2e
+tests

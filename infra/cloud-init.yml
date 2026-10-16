@@ -1,0 +1,44 @@
+#cloud-config
+# Paste into "Cloud-init script" when launching the OCI instance (Ubuntu 24.04).
+# Replace DEPLOY_PUBLIC_KEY below with the contents of deploy_key.pub before pasting.
+package_update: true
+package_upgrade: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - unattended-upgrades
+  - curl
+  - sqlite3
+
+users:
+  - default
+  - name: deploy
+    shell: /bin/bash
+    lock_passwd: true
+
+write_files:
+  # Restricted key: it can only run deploy.sh, with no tty, forwarding or agent.
+  - path: /home/deploy/.ssh/authorized_keys
+    owner: deploy:deploy
+    permissions: "0600"
+    defer: true
+    content: |
+      restrict,command="/opt/app/deploy.sh" DEPLOY_PUBLIC_KEY
+
+runcmd:
+  - usermod -aG docker deploy
+  - install -d -o deploy -g deploy -m 755 /opt/app
+  - curl -fsSL https://raw.githubusercontent.com/al-exd/montreal-contraventions/master/infra/deploy.sh -o /opt/app/deploy.sh
+  - chown deploy:deploy /opt/app/deploy.sh
+  - chmod 755 /opt/app/deploy.sh
+  # Oracle's Ubuntu images ship iptables rules that reject everything but SSH; open web ports.
+  - iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
+  - iptables -I INPUT 1 -p tcp --dport 443 -j ACCEPT
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y netfilter-persistent iptables-persistent
+  - netfilter-persistent save
+  # Micro shape (1 GB RAM): add a 2 GB swap file.
+  - |
+    if [ "$(awk '/MemTotal/ {print $2}' /proc/meminfo)" -lt 4000000 ] && [ ! -f /swapfile ]; then
+      fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+      echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    fi

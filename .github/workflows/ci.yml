@@ -53,3 +53,13 @@ jobs:
       - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: shellcheck infra/*.sh infra/tests/*.sh
+      - run: bash infra/tests/deploy.test.sh
+      - run: IMAGE_PREFIX=x IMAGE_TAG=y SITE_ADDRESS=z docker compose -f infra/compose.yml config -q
+      - run: docker build -f infra/api.Dockerfile .
+      - run: docker build -f infra/web.Dockerfile .

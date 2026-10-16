@@ -14,3 +14,4 @@ Format: [MADR](https://adr.github.io/madr/). Numbered, never rewritten; a change
 | [0008](0008-secrets-management.md) | Secrets management | Accepted |
 | [0009](0009-single-identity-seeded-admin.md) | One Identity setup, admin seeded from a secret | Accepted |
 | [0010](0010-early-deployment-and-backups.md) | Early deployment and backups before irreplaceable data | Accepted |
+| [0011](0011-ssh-open-to-internet-for-cd.md) | SSH reachable from the internet for continuous deployment | Accepted |

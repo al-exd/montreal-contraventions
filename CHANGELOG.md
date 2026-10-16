@@ -20,6 +20,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - Angular frontend skeleton with dev proxy to the API, app shell showing the dataset attribution, Vitest unit tests and a Playwright smoke test.
 - CI: frontend job (unit tests, build, e2e), Gitleaks secret scan, Dependabot for NuGet, npm and GitHub Actions; CI also runs on `dev`.
 
+### Added (increment 3)
+
+- Deployment: API and web (Caddy) Dockerfiles, `infra/compose.yml`, `infra/cloud-init.yml`, restricted `infra/deploy.sh` with tests, `cd.yml` (multi-arch images to GHCR, SSH deploy, smoke test, rollback), Oracle runbook and ADR-0011.
+
 ### Changed
 
 - Roadmap revised and renumbered: walking-skeleton deployment at increment 3, backups at increment 13 before the feature checkpoint, single Identity setup (ADRs 0009 and 0010).
