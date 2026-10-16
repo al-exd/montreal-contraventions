@@ -10,6 +10,7 @@ setup() {
   work="$(mktemp -d)"
   export APP_DIR="$work/app" DOCKER_LOG="$work/docker.log"
   mkdir -p "$APP_DIR" "$work/bin"
+  # shellcheck disable=SC2016 # the stub must expand $* when it runs, not now
   printf '#!/usr/bin/env bash\necho "$*" >> "$DOCKER_LOG"\n' > "$work/bin/docker"
   chmod +x "$work/bin/docker"
   export PATH="$work/bin:$PATH"
