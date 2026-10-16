@@ -84,6 +84,18 @@ Key policies:
 2. **Local curation wins**: an admin revision is never superseded by a later import revision in the current view, but the import is still recorded.
 3. **Alert once**: each new violation produces at most one alert per subscriber (outbox, idempotent).
 
+## Observed feed (2026-10-16)
+
+Checked against the live file; the CSV adapter and the feed adapter (increments 5 and 6) are built on these facts.
+
+- URL: `https://donnees.montreal.ca/dataset/05a9e718-6810-4e73-8bb9-5955efeb91a0/resource/7f939a08-be8a-45e1-b208-d8744dca8fc6/download/violations.csv`
+- The URL answers `302` to a signed Google Cloud Storage URL valid for 7 days; the HTTP client must follow redirects and never store the redirected URL.
+- A request without a `User-Agent` header is rejected with `403 RBAC: access denied`; the feed adapter sends a descriptive `User-Agent`.
+- About 4.2 MB, 9,052 data rows, UTF-8 without BOM (still handle a BOM), comma-separated, text fields quoted.
+- Header: `id_poursuite,business_id,date,description,adresse,date_jugement,etablissement,montant,proprietaire,ville,statut,date_statut,categorie`.
+- Dates are `yyyyMMdd` strings (for example `"20240925"`).
+- The file's `Last-Modified` header (here 2026-10-12) can short-circuit an import when unchanged.
+
 ## Hotspots and open questions
 
 - Does the feed ever remove rows? If a violation disappears upstream, record an Import "absent" marker rather than deleting (decide in [ADR-0006](adr/0006-append-only-revisions.md)).
