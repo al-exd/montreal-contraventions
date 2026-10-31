@@ -2,10 +2,13 @@ version: 2
 updates:
   - package-ecosystem: nuget
     directory: /
+    target-branch: staging
     schedule: { interval: weekly }
   - package-ecosystem: npm
     directory: /frontend
+    target-branch: staging
     schedule: { interval: weekly }
   - package-ecosystem: github-actions
     directory: /
+    target-branch: staging
     schedule: { interval: weekly }

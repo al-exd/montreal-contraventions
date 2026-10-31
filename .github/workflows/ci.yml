@@ -1,9 +1,20 @@
 name: ci
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
-    branches: [master, dev]
+    branches:
+      - master
+      - staging
+      - dev
   pull_request:
+    branches:
+      - master
+      - staging
+      - dev
 
 permissions:
   contents: read
@@ -16,6 +27,7 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
+          cache: true
       - run: dotnet restore
       - run: dotnet format --verify-no-changes --no-restore
       - run: dotnet build --no-restore -warnaserror
