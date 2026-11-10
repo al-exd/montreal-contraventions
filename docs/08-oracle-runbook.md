@@ -21,7 +21,7 @@ One-time setup of the Always Free VM, then the first automatic deployment. Conso
 ## Before you start
 
 - Everything below stays inside Always Free. **Never click "Upgrade" or "Pay As You Go"** ([guardrails](07-cicd-and-deployment.md#zero-cost-guardrails)).
-- `infra/deploy.sh` is downloaded by the VM from the `master` branch, and `cd.yml` only runs from `master`. Merge `dev` into `master` before step 4 (or at least before step 8) so both exist there.
+- `infra/deploy.sh` is downloaded by the VM from the `master` branch, and `cd.yml` only runs from `master`. Merge `staging` into `master` before step 4 (or at least before step 8) so both exist there.
 
 ## 1. Keys on your machine
 
@@ -129,7 +129,7 @@ Also enable **Settings → Code security**: secret scanning and push protection.
 
 ## 8. First deployment
 
-1. Merge `dev` into `master` (pull request). `ci` runs, then `cd` starts by itself (or run **Actions → cd → Run workflow** on `master`).
+1. Merge `staging` into `master` (pull request). `ci` runs, then `cd` starts by itself (or run **Actions → cd → Run workflow** on `master`).
 2. The `publish` job pushes `ghcr.io/<owner>/montreal-contraventions-api` and `-web` (amd64 and arm64).
 3. **First time only**: GHCR packages start private. On GitHub go to your profile → **Packages**, open each of the two packages → **Package settings → Change visibility → Public**. Then re-run the failed `deploy` job. (The VM pulls without credentials; see [ADR-0008](adr/0008-secrets-management.md).)
 4. The `deploy` job sends `compose.yml` and a generated `.env` over SSH, the VM pulls and starts the stack, and the smoke test calls `https://<site>/health`.
@@ -148,7 +148,7 @@ Prove once that a failed smoke test restores the previous version. Do not point 
 
 Instead, break `/health` where the unit tests cannot see it, so CI stays green and CD runs:
 
-1. On `dev`, in `infra/Caddyfile`, change `handle /health { reverse_proxy api:8080 }` to proxy to `api:9999` (nothing listens there, so `/health` answers 502). Commit, push, merge to `master`.
+1. On `staging`, in `infra/Caddyfile`, change `handle /health { reverse_proxy api:8080 }` to proxy to `api:9999` (nothing listens there, so `/health` answers 502). Commit, push, merge to `master`.
 2. Watch **Actions → cd**: `publish` and `Deploy` succeed, `Smoke test` fails after its 60 s of retries, `Roll back` runs and the job ends red with the error "rolled back to the previous version".
 3. Check `curl -i https://<site>/health` is **200** again and `/opt/app/.env` on the VM holds the previous image tag. After a rollback `.env.previous` still holds that last good tag (a rollback does not overwrite it), so a second rollback is a no-op.
 4. Revert the commit and merge; the next deployment is green.

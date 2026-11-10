@@ -18,7 +18,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
 ### Added (increment 2)
 
 - Angular frontend skeleton with dev proxy to the API, app shell showing the dataset attribution, Vitest unit tests and a Playwright smoke test.
-- CI: frontend job (unit tests, build, e2e), Gitleaks secret scan, Dependabot for NuGet, npm and GitHub Actions; CI also runs on `dev`.
+- CI: frontend job (unit tests, build, e2e), Gitleaks secret scan, Dependabot for NuGet, npm and GitHub Actions; CI also runs on `staging`.
 
 ### Added (increment 3)
 
